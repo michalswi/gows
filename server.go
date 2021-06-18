@@ -13,7 +13,7 @@ import (
 // base on:
 // https://github.com/gorilla/websocket/tree/master/examples/echo
 
-var addr = flag.String("addr", "localhost", "http service address")
+var addr = flag.String("addr", "0.0.0.0", "http service address")
 var port = flag.String("port", "8080", "http service port")
 
 var upgrader = websocket.Upgrader{} // use default options

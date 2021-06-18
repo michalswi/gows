@@ -30,8 +30,6 @@ FROM alpine:${ALPINE_VERSION}
 ARG VERSION
 ARG APPNAME
 
-ENV SERVICE_PORT="8080"
-
 COPY --from=builder /tmp/dummy/${APPNAME}-${VERSION} /usr/bin/${APPNAME}
 
 CMD ["wsserver"]

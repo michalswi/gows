@@ -7,8 +7,6 @@ APPNAME := wsserver
 
 VERSION ?= $(shell git describe --tags --always)
 BUILD_TIME ?= $(shell date -u '+%Y-%m-%d %H:%M:%S')
-LAST_COMMIT_USER ?= $(shell git log -1 --format='%cn <%ce>')
-LAST_COMMIT_HASH ?= $(shell git log -1 --format=%H)
 LAST_COMMIT_TIME ?= $(shell git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M:%S')
 
 SERVICE_PORT ?= 8080
@@ -33,8 +31,6 @@ go-build: 		## Build binary
 	-v \
 	-ldflags "-s -w -X '$(GIT_REPO)/version.AppVersion=$(VERSION)' \
 	-X '$(GIT_REPO)/version.BuildTime=$(BUILD_TIME)' \
-	-X '$(GIT_REPO)/version.LastCommitUser=$(LAST_COMMIT_USER)' \
-	-X '$(GIT_REPO)/version.LastCommitHash=$(LAST_COMMIT_HASH)' \
 	-X '$(GIT_REPO)/version.LastCommitTime=$(LAST_COMMIT_TIME)'" \
 	-o $(APPNAME)-$(VERSION) .
 
@@ -49,8 +45,6 @@ docker-build:	## Build docker image
 	--build-arg APPNAME="$(APPNAME)" \
 	--build-arg VERSION="$(VERSION)" \
 	--build-arg BUILD_TIME="$(BUILD_TIME)" \
-	--build-arg LAST_COMMIT_USER="$(LAST_COMMIT_USER)" \
-	--build-arg LAST_COMMIT_HASH="$(LAST_COMMIT_HASH)" \
 	--build-arg LAST_COMMIT_TIME="$(LAST_COMMIT_TIME)" \
 	--label="build.version=$(VERSION)" \
 	--tag="$(DOCKER_REPO)/$(APPNAME):latest" \
