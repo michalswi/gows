@@ -11,8 +11,12 @@ LAST_COMMIT_TIME ?= $(shell git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%
 
 SERVICE_PORT ?= 8080
 
+AZ_RG ?= wsserverrg
+AZ_LOCATION ?= westeurope
+AZ_DNS_LABEL ?= $(APPNAME)-$(VERSION)
+
 .DEFAULT_GOAL := help
-.PHONY: test go-run go-build all docker-build docker-run docker-stop
+.PHONY: test go-run go-build all docker-build docker-run docker-stop azure-rg azure-rg-del azure-aci
 
 help:
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} /^[a-zA-Z_-]+:.*?##/ \
@@ -60,3 +64,25 @@ docker-run:		## Run docker image with default parameters (or overwrite)
 docker-stop:	## Stop running docker
 	$(info -stop wsserver in docker-)
 	docker stop $(APPNAME)
+
+azure-rg:	## Create the Azure Resource Group
+	az group create --name $(AZ_RG) --location $(AZ_LOCATION)
+
+azure-rg-del:	## Delete the Azure Resource Group
+	az group delete --name $(AZ_RG)
+
+azure-aci:	## Run wsserver app (Azure Container Instance)
+	az container create \
+	--resource-group $(AZ_RG) \
+	--name $(APPNAME) \
+	--image michalsw/$(APPNAME) \
+	--restart-policy Always \
+	--ports $(SERVICE_PORT) \
+	--dns-name-label $(AZ_DNS_LABEL) \
+	--location $(AZ_LOCATION)
+
+azure-aci-logs:	## Get wsserver app logs (Azure Container Instance)
+	az container logs \
+	--resource-group $(AZ_RG) \
+	--name $(APPNAME) \
+	--follow
