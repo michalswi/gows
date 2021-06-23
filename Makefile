@@ -9,6 +9,7 @@ VERSION ?= $(shell git describe --tags --always)
 BUILD_TIME ?= $(shell date -u '+%Y-%m-%d %H:%M:%S')
 LAST_COMMIT_TIME ?= $(shell git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M:%S')
 
+PORT ?= 80
 SERVICE_PORT ?= 8080
 
 AZ_RG ?= wsserverrg
@@ -25,10 +26,10 @@ help:
 test:
 	go test -v ./...
 
-go-run: 		## Run wsserver
+go-run: ## Run wsserver
 	go run .	
 
-go-build: 		## Build binary
+go-build: ## Build binary
 	$(info -build wsserver binary-)
 	CGO_ENABLED=0 \
 	go build \
@@ -40,7 +41,7 @@ go-build: 		## Build binary
 
 all: test go-build
 
-docker-build:	## Build docker image
+docker-build: ## Build docker image
 	$(info -build wsserver docker image-)
 	docker build \
 	--pull \
@@ -54,34 +55,39 @@ docker-build:	## Build docker image
 	--tag="$(DOCKER_REPO)/$(APPNAME):latest" \
 	.
 
-docker-run:		## Run docker image with default parameters (or overwrite)
+docker-run: ## Run docker image with default parameters (or overwrite)
 	$(info -run wsserver in docker-)
 	docker run -d --rm \
 	--name $(APPNAME) \
-	-p $(SERVICE_PORT):$(SERVICE_PORT) \
+	-p $(SERVICE_PORT):$(PORT) \
 	$(DOCKER_REPO)/$(APPNAME):latest
 
-docker-stop:	## Stop running docker
+docker-stop: ## Stop running docker
 	$(info -stop wsserver in docker-)
 	docker stop $(APPNAME)
 
-azure-rg:	## Create the Azure Resource Group
+azure-rg: ## Create the Azure Resource Group
 	az group create --name $(AZ_RG) --location $(AZ_LOCATION)
 
-azure-rg-del:	## Delete the Azure Resource Group
+azure-rg-del: ## Delete the Azure Resource Group
 	az group delete --name $(AZ_RG)
 
-azure-aci:	## Run wsserver app (Azure Container Instance)
+azure-aci: ## Run wsserver app (Azure Container Instance)
 	az container create \
 	--resource-group $(AZ_RG) \
 	--name $(APPNAME) \
 	--image michalsw/$(APPNAME) \
 	--restart-policy Always \
-	--ports $(SERVICE_PORT) \
+	--ports $(PORT) \
 	--dns-name-label $(AZ_DNS_LABEL) \
 	--location $(AZ_LOCATION)
 
-azure-aci-logs:	## Get wsserver app logs (Azure Container Instance)
+azure-aci-fqdn: ## Get wsserver fqdn
+	az container list \
+	--resource-group $(AZ_RG) \
+	--query "[].ipAddress.fqdn" -o tsv
+
+azure-aci-logs: ## Get wsserver app logs (Azure Container Instance)
 	az container logs \
 	--resource-group $(AZ_RG) \
 	--name $(APPNAME) \
