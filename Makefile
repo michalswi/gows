@@ -1,5 +1,5 @@
-GOLANG_VERSION := 1.15.6
-ALPINE_VERSION := 3.13
+GOLANG_VERSION := 1.23.2
+ALPINE_VERSION := 3.20
 
 GIT_REPO := github.com/michalswi/gowsserver
 DOCKER_REPO := michalsw
@@ -17,7 +17,7 @@ AZ_LOCATION ?= westeurope
 AZ_DNS_LABEL ?= $(APPNAME)-$(VERSION)
 
 .DEFAULT_GOAL := help
-.PHONY: test go-run go-build all docker-build docker-run docker-stop azure-rg azure-rg-del azure-aci
+.PHONY: test go-run go-build all docker-build-arm docker-build-linux docker-run docker-stop azure-rg azure-rg-del azure-aci
 
 help:
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} /^[a-zA-Z_-]+:.*?##/ \
@@ -41,7 +41,21 @@ go-build: ## Build binary
 
 all: test go-build
 
-docker-build: ## Build docker image
+docker-build-arm: ## Build arm docker image
+	$(info -build wsserver docker image-)
+	docker build \
+	--pull \
+	--build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
+	--build-arg ALPINE_VERSION="$(ALPINE_VERSION)" \
+	--build-arg APPNAME="$(APPNAME)" \
+	--build-arg VERSION="$(VERSION)" \
+	--build-arg BUILD_TIME="$(BUILD_TIME)" \
+	--build-arg LAST_COMMIT_TIME="$(LAST_COMMIT_TIME)" \
+	--label="build.version=$(VERSION)" \
+	--tag="$(DOCKER_REPO)/$(APPNAME):latest" \
+	.
+
+docker-build-linux: ## Build linux docker image
 	$(info -build wsserver docker image-)
 	docker build \
 	--pull \
@@ -76,7 +90,7 @@ azure-aci: ## Run wsserver app (Azure Container Instance)
 	az container create \
 	--resource-group $(AZ_RG) \
 	--name $(APPNAME) \
-	--image michalsw/$(APPNAME) \
+	--image $(DOCKER_REPO)/$(APPNAME) \
 	--restart-policy Always \
 	--ports $(PORT) \
 	--dns-name-label $(AZ_DNS_LABEL) \

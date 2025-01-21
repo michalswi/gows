@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// base on:
+// based on:
 // https://github.com/gorilla/websocket/tree/master/examples/echo
 
 var addr = flag.String("addr", "0.0.0.0", "http service address")
@@ -19,6 +19,15 @@ var port = flag.String("port", "80", "http service port")
 var upgrader = websocket.Upgrader{} // use default options
 
 var logger = log.New(os.Stdout, "server ", log.LstdFlags|log.Lshortfile|log.Ltime|log.LUTC)
+
+func main() {
+	flag.Parse()
+	http.HandleFunc("/echo", echo)
+	http.HandleFunc("/", home)
+	http.HandleFunc("/hc", hc)
+	logger.Println("Server is ready to handle requests at port", *port)
+	logger.Fatal(http.ListenAndServe(*addr+":"+*port, nil))
+}
 
 func echo(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -49,16 +58,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func hc(w http.ResponseWriter, r *http.Request) {
 	logger.Printf("hc endpoint: %s", r.Method)
-	w.Write([]byte("ok"))
-}
-
-func main() {
-	flag.Parse()
-	http.HandleFunc("/echo", echo)
-	http.HandleFunc("/", home)
-	http.HandleFunc("/hc", hc)
-	logger.Println("Server is ready to handle requests at port", port)
-	logger.Fatal(http.ListenAndServe(*addr+":"+*port, nil))
+	_, err := w.Write([]byte("ok"))
+	if err != nil {
+		logger.Println("Error writing response:", err)
+	}
 }
 
 var homeTemplate = template.Must(template.New("").Parse(`
