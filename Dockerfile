@@ -1,7 +1,7 @@
 ARG GOLANG_VERSION
 ARG ALPINE_VERSION
 
-# build
+## build
 FROM golang:${GOLANG_VERSION}-alpine${ALPINE_VERSION} AS builder
 
 RUN apk --no-cache add make git; \
@@ -20,11 +20,11 @@ RUN go mod download
 ARG VERSION
 ARG APPNAME
 
-COPY --chown=dummy server.go server.go
+COPY --chown=dummy main.go main.go
 
 RUN make go-build
 
-# execute
+## execute
 FROM alpine:${ALPINE_VERSION}
 
 ARG VERSION

@@ -4,10 +4,7 @@ ALPINE_VERSION := 3.20
 GIT_REPO := github.com/michalswi/gowsserver
 DOCKER_REPO := michalsw
 APPNAME := wsserver
-
-VERSION ?= $(shell git describe --tags --always)
-BUILD_TIME ?= $(shell date -u '+%Y-%m-%d %H:%M:%S')
-LAST_COMMIT_TIME ?= $(shell git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M:%S')
+VERSION := 0.1.0
 
 PORT ?= 80
 SERVICE_PORT ?= 8080
@@ -17,7 +14,7 @@ AZ_LOCATION ?= westeurope
 AZ_DNS_LABEL ?= $(APPNAME)-$(VERSION)
 
 .DEFAULT_GOAL := help
-.PHONY: test go-run go-build all docker-build-arm docker-build-linux docker-run docker-stop azure-rg azure-rg-del azure-aci
+.PHONY: test go-run go-build docker-build-arm docker-build-linux docker-run docker-stop azure-rg azure-rg-del azure-aci
 
 help:
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} /^[a-zA-Z_-]+:.*?##/ \
@@ -30,54 +27,44 @@ go-run: ## Run wsserver
 	go run .	
 
 go-build: ## Build binary
-	$(info -build wsserver binary-)
 	CGO_ENABLED=0 \
 	go build \
 	-v \
-	-ldflags "-s -w -X '$(GIT_REPO)/version.AppVersion=$(VERSION)' \
-	-X '$(GIT_REPO)/version.BuildTime=$(BUILD_TIME)' \
-	-X '$(GIT_REPO)/version.LastCommitTime=$(LAST_COMMIT_TIME)'" \
+	-ldflags "-s -w -X '$(GIT_REPO)/version.AppVersion=$(VERSION)'" \
 	-o $(APPNAME)-$(VERSION) .
 
-all: test go-build
+# all: test go-build
 
 docker-build-arm: ## Build arm docker image
-	$(info -build wsserver docker image-)
 	docker build \
 	--pull \
 	--build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 	--build-arg ALPINE_VERSION="$(ALPINE_VERSION)" \
 	--build-arg APPNAME="$(APPNAME)" \
 	--build-arg VERSION="$(VERSION)" \
-	--build-arg BUILD_TIME="$(BUILD_TIME)" \
-	--build-arg LAST_COMMIT_TIME="$(LAST_COMMIT_TIME)" \
 	--label="build.version=$(VERSION)" \
 	--tag="$(DOCKER_REPO)/$(APPNAME):latest" \
 	.
 
 docker-build-linux: ## Build linux docker image
-	$(info -build wsserver docker image-)
 	docker build \
 	--pull \
 	--build-arg GOLANG_VERSION="$(GOLANG_VERSION)" \
 	--build-arg ALPINE_VERSION="$(ALPINE_VERSION)" \
 	--build-arg APPNAME="$(APPNAME)" \
 	--build-arg VERSION="$(VERSION)" \
-	--build-arg BUILD_TIME="$(BUILD_TIME)" \
-	--build-arg LAST_COMMIT_TIME="$(LAST_COMMIT_TIME)" \
 	--label="build.version=$(VERSION)" \
+	--platform linux/amd64 \
 	--tag="$(DOCKER_REPO)/$(APPNAME):latest" \
 	.
 
 docker-run: ## Run docker image with default parameters (or overwrite)
-	$(info -run wsserver in docker-)
 	docker run -d --rm \
 	--name $(APPNAME) \
 	-p $(SERVICE_PORT):$(PORT) \
 	$(DOCKER_REPO)/$(APPNAME):latest
 
 docker-stop: ## Stop running docker
-	$(info -stop wsserver in docker-)
 	docker stop $(APPNAME)
 
 azure-rg: ## Create the Azure Resource Group
