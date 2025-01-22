@@ -11,7 +11,7 @@ SERVICE_PORT ?= 8080
 
 AZ_RG ?= wsserverrg
 AZ_LOCATION ?= westeurope
-AZ_DNS_LABEL ?= $(APPNAME)-$(VERSION)
+AZ_DNS_LABEL ?= $(APPNAME)-$(AZ_LOCATION)
 
 .DEFAULT_GOAL := help
 .PHONY: test go-run go-build docker-build-arm docker-build-linux docker-run docker-stop azure-rg azure-rg-del azure-aci
@@ -77,11 +77,12 @@ azure-aci: ## Run wsserver app (Azure Container Instance)
 	az container create \
 	--resource-group $(AZ_RG) \
 	--name $(APPNAME) \
-	--image $(DOCKER_REPO)/$(APPNAME) \
+	--image $(DOCKER_REPO)/$(APPNAME):latest \
 	--restart-policy Always \
 	--ports $(PORT) \
 	--dns-name-label $(AZ_DNS_LABEL) \
-	--location $(AZ_LOCATION)
+	--location $(AZ_LOCATION) \
+	--verbose
 
 azure-aci-fqdn: ## Get wsserver fqdn
 	az container list \

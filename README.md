@@ -13,7 +13,7 @@ make azure-aci-fqdn
 wsserver-b063757.westeurope.azurecontainer.io
 
 
-## client
+## client (nothing fancy, just connect)
 
 ./client -addr wsserver-b063757.westeurope.azurecontainer.io -port 80
 ```
